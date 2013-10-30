@@ -3,20 +3,27 @@ using System.Collections;
 
 public class LevelGenerator : MonoBehaviour {
 
-	public float speed = -4f;
+	float speed = 4.0f;
+	float jumpGap = 2.0f;
+	float landGap = 2.0f;
+	float flipGap = 1.0f;
 
 	Object spikeLeft;
 	Object spikeRight;
 
 	float timeLast;
 	float timeGap = 0.5f;
-
-	Vector3 posLeft = new Vector3(-2f, 10, 0);
-	Vector3 posRight = new Vector3(2f, 10, 0);
+	
+	Vector3 posLeft = new Vector3(-2f, -10, 0);
+	Vector3 posRight = new Vector3(2f, -10, 0);
 
 	void Awake() {
 		spikeLeft = Resources.Load("SpikeLeft");
 		spikeRight = Resources.Load("SpikeRight");
+	}
+
+	public float GetSpeed() {
+		return speed;
 	}
 
 	void OnLevelWasLoaded() {
@@ -34,4 +41,5 @@ public class LevelGenerator : MonoBehaviour {
 			obj.GetComponent<Spike>().lg = this;
 		}
 	}
+
 }
