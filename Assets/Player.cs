@@ -3,14 +3,22 @@ using System.Collections;
 
 public class Player : MonoBehaviour {
 
-	float grav = 4.0f;
+	float grav;// = 4.0f;
 	float jump = 1.8f;
 	bool gravDirection = false;
 
 	public PlayerCollider colliderLeft;
 	public PlayerCollider colliderRight;
 
+	LevelGenerator lg;
+
+	void Awake() {
+		lg = GameObject.Find("LevelGenerator").GetComponent<LevelGenerator>() as LevelGenerator;
+	}
+
 	void Update() {
+
+		grav = lg.GetGravity();
 
 		bool jump = false, flip = false;
 

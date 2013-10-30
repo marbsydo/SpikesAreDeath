@@ -6,7 +6,10 @@ public enum Side{E, L, R}
 
 public class LevelGenerator : MonoBehaviour {
 
+	float globalSpeedModifier = 1.0f;
+
 	float speed = 4.0f;
+	float grav = 4.0f;
 
 	Object spikeLeft;
 	Object spikeRight;
@@ -36,11 +39,18 @@ public class LevelGenerator : MonoBehaviour {
 	}
 
 	public float GetSpeed() {
-		return speed;
+		return speed * globalSpeedModifier;
+	}
+
+	public float GetGravity() {
+		return grav * globalSpeedModifier;
 	}
 
 	void Update() {
-		if (Time.time > timeLast + timeGap) {
+
+		globalSpeedModifier = 1.0f + (Mathf.Sin(Time.time) * 0.1f);
+
+		if (Time.time > timeLast + (timeGap / globalSpeedModifier)) {
 			timeLast = Time.time;
 
 			if (gap > 0) {
