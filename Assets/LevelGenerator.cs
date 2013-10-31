@@ -4,9 +4,16 @@ using System.Collections.Generic;
 
 public enum Side{E, L, R}
 
+public class Section {
+	public bool spikeLeft;
+	public bool spikeRight;
+}
+
 public class LevelGenerator : MonoBehaviour {
 
 	float globalSpeedModifier = 1.0f;
+
+	Queue<Section> gen = new Queue<Section>();
 
 	float speed = 4.0f;
 	float grav = 4.0f;
@@ -17,11 +24,8 @@ public class LevelGenerator : MonoBehaviour {
 	float cursor = -10;
 	GameObject lastObject;
 
-	//Vector3 posLeft = new Vector3(-2f, -10, 0);
-	//Vector3 posRight = new Vector3(2f, -10, 0);
-
 	float timeLast;
-	float timeGap = 0.55f;
+	float timeGap = 0.35f;
 	
 	Vector3 posLeft = new Vector3(-2f, -10, 0);
 	Vector3 posRight = new Vector3(2f, -10, 0);
@@ -48,17 +52,15 @@ public class LevelGenerator : MonoBehaviour {
 
 	void Update() {
 
-		globalSpeedModifier = 1.0f + (Mathf.Sin(Time.time) * 0.1f);
-
 		if (Time.time > timeLast + (timeGap / globalSpeedModifier)) {
 			timeLast = Time.time;
 
-			if (gap > 0) {
-				gap--;
-			} else {
+			// Only add more to the generation queue if it is empty
+			if (GenEmpty()) {
 				Side nextSide = Side.E;
 				float v = Random.value;
 
+				// Based upon our current side, work out which side to be next
 				if (currentSide == Side.E) {
 					if (v < 0.33f)
 						nextSide = Side.E;
@@ -84,21 +86,47 @@ public class LevelGenerator : MonoBehaviour {
 
 				v = Random.value;
 
-				switch (nextSide) {
+				// Add things to the queue to be generated
+				currentSide = nextSide;
+				switch (currentSide) {
 				case Side.E:
-					CreateSpikeLeft();
-					CreateSpikeRight();
-					CreateGap(1);
+					GenSpikes(true, true);
+					GenSpikes(false, false);
+					GenSpikes(false, false);
 					break;
 				case Side.L:
-					CreateSpikeRight();
+					GenSpikes(false, true);
+					GenSpikes(false, false);
 					break;
 				case Side.R:
-					CreateSpikeLeft();
+					GenSpikes(true, false);
+					GenSpikes(false, false);
 					break;
 				}
 			}
+
+			// Generate the thing at the front of the queue and remove it
+			GenGenerate();
 		}
+	}
+
+	void GenSpikes(bool spikeLeft, bool spikeRight) {
+		Section s = new Section();
+		s.spikeLeft = spikeLeft;
+		s.spikeRight = spikeRight;
+		gen.Enqueue(s);
+	}
+
+	bool GenEmpty() {
+		return gen.Count == 0;
+	}
+
+	void GenGenerate() {
+		Section s = gen.Dequeue();
+		if (s.spikeLeft)
+			CreateSpikeLeft();
+		if (s.spikeRight)
+			CreateSpikeRight();
 	}
 
 	void CreateSpikeLeft() {
@@ -111,7 +139,7 @@ public class LevelGenerator : MonoBehaviour {
 		obj.GetComponent<Spike>().lg = this;
 	}
 
-	void CreateGap(int gapSize) {
+	void CreateGapNext(int gapSize) {
 		gap = gapSize;
 	}
 

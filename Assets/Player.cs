@@ -4,7 +4,7 @@ using System.Collections;
 public class Player : MonoBehaviour {
 
 	float grav;// = 4.0f;
-	float jump = 1.8f;
+	float jump = 1.9f;
 	bool gravDirection = false;
 
 	public PlayerCollider colliderLeft;
