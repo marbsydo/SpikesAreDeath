@@ -12,6 +12,15 @@ public class Player : MonoBehaviour {
 
 	LevelGenerator lg;
 
+	float pressedJumpAt = 0;
+	float pressedFlipAt = 0;
+	float earlyButtonPressGraceTime = 0.2f;
+
+	float actuallyJumpAt = 0;
+	float actuallyFlipAt = 0;
+	float actuallyJumpCoolDownTime = 0.1f;
+	float actuallyFlipCoolDownTime = 0.1f;
+
 	void Awake() {
 		lg = GameObject.Find("LevelGenerator").GetComponent<LevelGenerator>() as LevelGenerator;
 	}
@@ -48,12 +57,20 @@ public class Player : MonoBehaviour {
 			}
 		}
 
-		if (jump)
-			Jump();
-		
-		if (flip)
-			Flip();
+		if (IsGrounded()) {
+			if (jump || Time.time < pressedJumpAt + earlyButtonPressGraceTime)
+				if (Time.time > actuallyJumpAt + actuallyJumpCoolDownTime)
+					Jump();	
+			if (flip || Time.time < pressedFlipAt + earlyButtonPressGraceTime)
+				if (Time.time > actuallyFlipAt + actuallyFlipCoolDownTime)
+					Flip();
+		} else {
+			if (jump)
+				pressedJumpAt = Time.time;
+			if (flip)
+				pressedFlipAt = Time.time;
 		}
+	}
 
 	void FixedUpdate() {
 		// Apply gravity
@@ -61,15 +78,14 @@ public class Player : MonoBehaviour {
 	}
 
 	void Jump() {
-		if (IsGrounded())
-			rigidbody.AddForce(new Vector3(grav * (gravDirection ? -1.0f : 1.0f) * jump, 0, 0), ForceMode.VelocityChange);
+		actuallyJumpAt = Time.time;
+		rigidbody.AddForce(new Vector3(grav * (gravDirection ? -1.0f : 1.0f) * jump, 0, 0), ForceMode.VelocityChange);
 	}
 
 	void Flip() {
-		if (IsGrounded()) {
-			Jump();
-			gravDirection = !gravDirection;
-		}
+		actuallyFlipAt = Time.time;
+		Jump();
+		gravDirection = !gravDirection;
 	}
 
 	bool IsGrounded() {

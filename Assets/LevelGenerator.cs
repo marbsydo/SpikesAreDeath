@@ -21,7 +21,7 @@ public class LevelGenerator : MonoBehaviour {
 	//Vector3 posRight = new Vector3(2f, -10, 0);
 
 	float timeLast;
-	float timeGap = 0.5f;
+	float timeGap = 0.55f;
 	
 	Vector3 posLeft = new Vector3(-2f, -10, 0);
 	Vector3 posRight = new Vector3(2f, -10, 0);
