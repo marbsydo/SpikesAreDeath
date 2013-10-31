@@ -11,7 +11,7 @@ public class Section {
 
 public class LevelGenerator : MonoBehaviour {
 
-	float globalSpeedModifier = 1.0f;
+	
 
 	Queue<Section> gen = new Queue<Section>();
 
@@ -30,12 +30,21 @@ public class LevelGenerator : MonoBehaviour {
 	Vector3 posLeft = new Vector3(-2f, -10, 0);
 	Vector3 posRight = new Vector3(2f, -10, 0);
 
-	Side currentSide = Side.E;
-	int gap = 0;
+	Dictionary<Side, float> sideWeights = new Dictionary<Side, float>();
+	public Side currentSide = Side.E;
+
+	// Level generation modifiers
+	float globalSpeedModifier = 1.0f;                       // Affects speed of all game related objects including spikes and player
+	float spikeDensity = 1.0f;                              // 1.0f = maximum density spikes, 0.0f = no spikes
+	bool changeWeightsToMakeSideSwappingMoreLikely = false; // If true, sequences of multiple identical spikes are made less unlikely
 
 	void Awake() {
 		spikeLeft = Resources.Load("SpikeLeft");
 		spikeRight = Resources.Load("SpikeRight");
+
+		sideWeights.Add(Side.E, 1.0f);
+		sideWeights.Add(Side.L, 1.0f);
+		sideWeights.Add(Side.R, 1.0f);
 	}
 
 	void OnLevelWasLoaded() {
@@ -62,51 +71,74 @@ public class LevelGenerator : MonoBehaviour {
 
 				// Based upon our current side, work out which side to be next
 				if (currentSide == Side.E) {
-					if (v < 0.33f)
+					v *= (sideWeights[Side.E] + sideWeights[Side.L] + sideWeights[Side.R]);
+					if (v < sideWeights[Side.E])
 						nextSide = Side.E;
-					else if (v < 0.67f)
+					else if (v < (sideWeights[Side.E] + sideWeights[Side.L]))
 						nextSide = Side.L;
 					else
 						nextSide = Side.R;
 				}
 
 				if (currentSide == Side.L) {
-					if (v < 0.5f)
+					v *= (sideWeights[Side.E] + sideWeights[Side.L]);
+					if (v < sideWeights[Side.E])
 						nextSide = Side.E;
 					else
 						nextSide = Side.L;
 				}
 
 				if (currentSide == Side.R) {
-					if (v < 0.5f)
+					v *= (sideWeights[Side.E] + sideWeights[Side.R]);
+					if (v < sideWeights[Side.E])
 						nextSide = Side.E;
 					else
 						nextSide = Side.R;
 				}
 
-				v = Random.value;
-
 				// Add things to the queue to be generated
 				currentSide = nextSide;
-				switch (currentSide) {
-				case Side.E:
-					GenSpikes(true, true);
-					GenSpikes(false, false);
-					GenSpikes(false, false);
-					break;
-				case Side.L:
-					GenSpikes(false, true);
-					GenSpikes(false, false);
-					break;
-				case Side.R:
-					GenSpikes(true, false);
-					GenSpikes(false, false);
-					break;
+				v = Random.value;
+				if (v <= spikeDensity) {
+					v = Random.value;
+					switch (currentSide) {
+					case Side.E:
+						GenSpikes(true, true);
+						GenSpikes(false, false);
+						GenSpikes(false, false);
+						break;
+					case Side.L:
+						GenSpikes(false, true);
+						/*
+						GenSpikes(false, true);
+						GenSpikes(true, false);
+						GenSpikes(true, false);
+						GenSpikes(false, true);
+						GenSpikes(false, true);
+						*/
+						break;
+					case Side.R:
+						GenSpikes(true, false);
+						break;
+					}
+				}
+
+				// Change weights to make side swapping more likely
+				if (changeWeightsToMakeSideSwappingMoreLikely) {
+					if (currentSide == Side.L) {
+						sideWeights[Side.L] = 0.1f;
+						sideWeights[Side.R] = 1.0f;
+					} else if (currentSide == Side.R) {
+						sideWeights[Side.L] = 1.0f;
+						sideWeights[Side.R] = 0.1f;
+					}
 				}
 			}
 
 			// Generate the thing at the front of the queue and remove it
 			GenGenerate();
+
+			Debug.Log("E: " + sideWeights[Side.E] + " L: " + sideWeights[Side.L] + " R: " + sideWeights[Side.R]);
 		}
 	}
 
@@ -122,6 +154,9 @@ public class LevelGenerator : MonoBehaviour {
 	}
 
 	void GenGenerate() {
+		if (GenEmpty())
+			return;
+
 		Section s = gen.Dequeue();
 		if (s.spikeLeft)
 			CreateSpikeLeft();
@@ -138,54 +173,4 @@ public class LevelGenerator : MonoBehaviour {
 		GameObject obj = (GameObject)GameObject.Instantiate(spikeRight, posRight, Quaternion.identity);
 		obj.GetComponent<Spike>().lg = this;
 	}
-
-	void CreateGapNext(int gapSize) {
-		gap = gapSize;
-	}
-
 }
-/*
-public enum Side{E, L, R}
-
-public abstract class SectionBase {
-	protected Side sideIn;
-	protected Side sideOut;
-
-	List<Side> AllowedNext() {
-		List<Side> st = new List<Side>();
-
-		switch (sideOut) {
-		case Side.E:
-			st.Add(Side.E);
-			st.Add(Side.L);
-			st.Add(Side.R);
-		break;
-		case Side.L:
-			st.Add(Side.E);
-			st.Add(Side.L);
-			break;
-		case Side.R:
-			st.Add(Side.E);
-			st.Add(Side.R);
-			break;
-		}
-
-		return st;
-	}
-
-	public abstract List<Vector3> GeneratePoints();
-}
-
-public class SectionEmpty : SectionBase {
-	SectionEmpty() {
-		sideIn = Side.E;
-		sideOut = Side.E;
-	}
-
-	public override List<Vector3> GeneratePoints() {
-		List<Vector3> p = new List<Vector3>();
-
-		return p;
-	}
-}
-*/
