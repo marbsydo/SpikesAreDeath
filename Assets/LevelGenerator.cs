@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 public enum Side{E, L, R}
-public enum SectionDifficulty{SuperEasy, Easy, Medium, Hard, SuperHard}
+public enum Difficulty{SuperEasy, Easy, Medium, Hard, SuperHard}
 
 public class Section {
 	public bool spikeLeft;
@@ -21,7 +21,6 @@ public class LevelGenerator : MonoBehaviour {
 	Object spikeLeft;
 	Object spikeRight;
 
-	float cursor = -10;
 	GameObject lastObject;
 
 	float timeLast;
@@ -31,7 +30,7 @@ public class LevelGenerator : MonoBehaviour {
 
 	public Side currentSide = Side.E;
 	Dictionary<Side, float> sideWeights = new Dictionary<Side, float>();
-	Dictionary<SectionDifficulty, float> difficultyWeights = new Dictionary<SectionDifficulty, float>();
+	Dictionary<Difficulty, float> difficultyWeights = new Dictionary<Difficulty, float>();
 
 	// Level generation modifiers
 	float timeGap = 0.35f;                                  // The time in seconds between generating spikes. Minimum = 0.35f
@@ -49,18 +48,21 @@ public class LevelGenerator : MonoBehaviour {
 		sideWeights.Add(Side.R, 1.0f);
 
 		// Weights for various difficults of spike generation
-		difficultyWeights.Add(SectionDifficulty.SuperEasy, 1.0f);
-		difficultyWeights.Add(SectionDifficulty.Easy,      0.0f);
-		difficultyWeights.Add(SectionDifficulty.Medium,    0.0f);
-		difficultyWeights.Add(SectionDifficulty.Hard,      0.0f);
-		difficultyWeights.Add(SectionDifficulty.SuperHard, 0.0f);
+		difficultyWeights.Add(Difficulty.SuperEasy, 1.0f);
+		difficultyWeights.Add(Difficulty.Easy,      0.0f);
+		difficultyWeights.Add(Difficulty.Medium,    0.0f);
+		difficultyWeights.Add(Difficulty.Hard,      0.0f);
+		difficultyWeights.Add(Difficulty.SuperHard, 0.0f);
 
 		// Create blueprints
-		blueprints.Add(new SectionBlueprint(this, Side.E, Side.E, SectionDifficulty.SuperEasy, "n"));
-		blueprints.Add(new SectionBlueprint(this, Side.L, Side.L, SectionDifficulty.SuperEasy, "nrn"));
-		blueprints.Add(new SectionBlueprint(this, Side.R, Side.R, SectionDifficulty.SuperEasy, "nln"));
-		blueprints.Add(new SectionBlueprint(this, Side.L, Side.L, SectionDifficulty.SuperEasy, "nrrrn"));
-		blueprints.Add(new SectionBlueprint(this, Side.R, Side.R, SectionDifficulty.SuperEasy, "nllln"));
+		AddBlueprint(Side.E, Side.E, Difficulty.SuperEasy, "n");
+		AddBlueprint(Side.L, Side.L, Difficulty.SuperEasy, "nrn");
+		AddBlueprint(Side.R, Side.R, Difficulty.SuperEasy, "nln");
+		AddBlueprint(Side.L, Side.L, Difficulty.SuperEasy, "nrrn");
+		AddBlueprint(Side.R, Side.R, Difficulty.SuperEasy, "nlln");
+		AddBlueprint(Side.E, Side.E, Difficulty.SuperEasy, "nbnn");
+		AddBlueprint(Side.E, Side.E, Difficulty.SuperEasy, "nrbn");
+		AddBlueprint(Side.E, Side.E, Difficulty.SuperEasy, "nlbn");
 	}
 
 	void OnLevelWasLoaded() {
@@ -143,26 +145,26 @@ public class LevelGenerator : MonoBehaviour {
 
 	Side AddSomeSpikes(Side thisSide) {
 		Side nextSide = Side.E;
-		SectionDifficulty chosenDifficulty = SectionDifficulty.Medium;
+		Difficulty chosenDifficulty = Difficulty.Medium;
 
 		// Choose what difficulty this section will be based upon the weights
-		float w_se = difficultyWeights[SectionDifficulty.SuperEasy];
-		float w_e = difficultyWeights[SectionDifficulty.Easy];
-		float w_m = difficultyWeights[SectionDifficulty.Medium];
-		float w_h = difficultyWeights[SectionDifficulty.Hard];
-		float w_sh = difficultyWeights[SectionDifficulty.SuperHard];
+		float w_se = difficultyWeights[Difficulty.SuperEasy];
+		float w_e = difficultyWeights[Difficulty.Easy];
+		float w_m = difficultyWeights[Difficulty.Medium];
+		float w_h = difficultyWeights[Difficulty.Hard];
+		float w_sh = difficultyWeights[Difficulty.SuperHard];
 		float v = Random.value * (w_se + w_e + w_m + w_h + w_sh);
 
 		if (v < w_se) {
-			chosenDifficulty = SectionDifficulty.SuperEasy;
+			chosenDifficulty = Difficulty.SuperEasy;
 		} else if (v < (w_se + w_e)) {
-			chosenDifficulty = SectionDifficulty.Easy;
+			chosenDifficulty = Difficulty.Easy;
 		} else if (v < (w_se + w_e + w_m)) {
-			chosenDifficulty = SectionDifficulty.Medium;
+			chosenDifficulty = Difficulty.Medium;
 		} else if (v < (w_se + w_e + w_m + w_h)) {
-			chosenDifficulty = SectionDifficulty.Hard;
+			chosenDifficulty = Difficulty.Hard;
 		} else {
-			chosenDifficulty = SectionDifficulty.SuperHard;
+			chosenDifficulty = Difficulty.SuperHard;
 		}
 
 		// We have chosen a difficulty
@@ -177,7 +179,7 @@ public class LevelGenerator : MonoBehaviour {
 		if (goodBlueprints.Count == 0) {
 			// Found no blueprints; show warning and generate no spikes
 			Debug.LogWarning("Could not find any appropriate blueprints!");
-			
+
 			GenSpikes(false, false);
 			nextSide = Side.E;
 		} else {
@@ -222,17 +224,21 @@ public class LevelGenerator : MonoBehaviour {
 		GameObject obj = (GameObject)GameObject.Instantiate(spikeRight, posRight, Quaternion.identity);
 		obj.GetComponent<Spike>().lg = this;
 	}
+
+	void AddBlueprint(Side sideFrom, Side sideTo, Difficulty difficulty, string spikes) {
+		blueprints.Add(new SectionBlueprint(this, sideFrom, sideTo, difficulty, spikes));
+	}
 }
 
 class SectionBlueprint {
 	private LevelGenerator lg;
 	public Side sideIn;
 	public Side sideOut;
-	public SectionDifficulty difficulty;
+	public Difficulty difficulty;
 	private string spikes;
 
-	// e.g. new SectionBlueprint(Side.L, Side.R, SectionDifficulty.Medium, "rrnbnnbnll")
-	public SectionBlueprint(LevelGenerator lg, Side sideIn, Side sideOut, SectionDifficulty difficulty, string spikes) {
+	// e.g. new SectionBlueprint(Side.L, Side.R, Difficulty.Medium, "rrnbnnbnll")
+	public SectionBlueprint(LevelGenerator lg, Side sideIn, Side sideOut, Difficulty difficulty, string spikes) {
 		this.lg = lg;
 		this.sideIn = sideIn;
 		this.sideOut = sideOut;
@@ -247,31 +253,10 @@ class SectionBlueprint {
 		for (int i = 0; i < spikes.Length; i++) {
 			switch (spikes[i]) {
 			case 'l':	lg.GenSpikes(true, false);		break;
-			case 'n':	lg.GenSpikes(false, false);	break;
+			case 'n':	lg.GenSpikes(false, false);		break;
 			case 'r':	lg.GenSpikes(false, true);		break;
 			case 'b':	lg.GenSpikes(true, true);		break;
 			}
 		}
 	}
 }
-
-/*
-abstract class SpikeSectionBase {
-	public Side sideIn;
-	public Side sideOut;
-	public SectionDifficulty difficulty;
-	public abstract void Generate();
-}
-
-class SS_EtoE_SuperEasy_1 {
-	SS_EtoE_SuperEasy_1 {
-		sideIn = Side.E;
-		sideOut = Side.E;
-		difficulty = SectionDifficulty.SuperEasy;
-	}
-
-	public override void Generate() {
-		GenSpikes(false, false);
-	}
-}
-*/
