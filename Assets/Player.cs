@@ -12,8 +12,8 @@ public class Player : MonoBehaviour {
 
 	LevelGenerator lg;
 
-	float pressedJumpAt = 0;
-	float pressedFlipAt = 0;
+	float pressedJumpAt = -999;
+	float pressedFlipAt = -999;
 	float earlyButtonPressGraceTime = 0.2f;
 
 	float actuallyJumpAt = 0;
@@ -21,11 +21,24 @@ public class Player : MonoBehaviour {
 	float actuallyJumpCoolDownTime = 0.1f;
 	float actuallyFlipCoolDownTime = 0.1f;
 
+	SADText scoreText;
+
+	public int score;
+	float scoreTimeLast;
+
 	void Awake() {
 		lg = GameObject.Find("LevelGenerator").GetComponent<LevelGenerator>() as LevelGenerator;
+		scoreText = GameObject.Find("Score").GetComponent<SADText>() as SADText;
+
+		scoreTimeLast = Time.time;
 	}
 
 	void Update() {
+		// Increment score every so many time things
+		if (Time.time > scoreTimeLast + 1.0f) {
+			scoreTimeLast = Time.time;
+			score += 1;
+		}
 
 		grav = lg.GetGravity();
 
@@ -70,6 +83,13 @@ public class Player : MonoBehaviour {
 			if (flip)
 				pressedFlipAt = Time.time;
 		}
+
+		// Update score thingy
+		string scoreString;
+		scoreString = "" + score;
+		while (scoreString.Length < 5)
+			scoreString = "0" + scoreString;
+		scoreText.text = scoreString;
 	}
 
 	void FixedUpdate() {
